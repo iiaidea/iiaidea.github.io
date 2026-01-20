@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CISSP CHALLENGE: PROTOCOL SHOE-RACK</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --panel-bg: #16213e;
+            --accent: #0f3460;
+            --highlight: #e94560;
+            --text-main: #e0e0e0;
+            --neon-blue: #00f3ff;
+            --secret-gold: #ffd700;
+            --cell-size: 35px;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--neon-blue);
+            padding-bottom: 10px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h1 {
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0;
+            font-size: 2rem;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            gap: 40px;
+            max-width: 1400px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        /* CLUES PANEL */
+        .clues-panel {
+            flex: 1;
+            min-width: 300px;
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--accent);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: fit-content;
+        }
+
+        .clue-section h3 {
+            color: var(--secret-gold);
+            border-bottom: 1px solid var(--accent);
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+
+        .clue-item {
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .clue-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .clue-num {
+            font-weight: bold;
+            color: var(--neon-blue);
+            margin-right: 5px;
+        }
+
+        /* CROSSWORD GRID */
+        .grid-wrapper {
+            background: #000;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .crossword-board {
+            display: grid;
+            grid-template-columns: repeat(16, var(--cell-size));
+            grid-template-rows: repeat(14, var(--cell-size));
+            gap: 2px;
+            position: relative;
+        }
+
+        .cell {
+            width: 100%;
+            height: 100%;
+            background: #252a40;
+            border: 1px solid #444;
+            color: white;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            outline: none;
+            padding: 0;
+            caret-color: transparent;
+            /* Hide cursor for cleaner look */
+        }
+
+        .cell:focus {
+            background: #394263;
+            border-color: var(--neon-blue);
+            z-index: 10;
+        }
+
+        .cell.special {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: rgba(255, 215, 0, 0.5);
+        }
+
+        .cell.correct {
+            color: #00ff41;
+            text-shadow: 0 0 5px #00ff41;
+            border-color: #00ff41;
+        }
+
+        .empty-cell {
+            background: transparent;
+            border: none;
+            visibility: hidden;
+        }
+
+        .cell-number {
+            position: absolute;
+            font-size: 0.6rem;
+            color: var(--neon-blue);
+            top: 1px;
+            left: 2px;
+            pointer-events: none;
+        }
+
+        .wrapper-cell {
+            position: relative;
+            width: var(--cell-size);
+            height: var(--cell-size);
+        }
+
+        /* SECRET LOCATION BOX */
+        .secret-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: black;
+            border: 2px dashed var(--secret-gold);
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .secret-title {
+            color: var(--secret-gold);
+            font-size: 1.2rem;
+            letter-spacing: 5px;
+            margin-bottom: 15px;
+        }
+
+        .secret-grid {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .secret-cell {
+            width: 50px;
+            height: 60px;
+            border-bottom: 3px solid var(--secret-gold);
+            color: var(--secret-gold);
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 10px var(--secret-gold);
+        }
+
+        /* SUCCESS MODAL */
+        #success-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .success-content {
+            border: 4px solid var(--neon-blue);
+            padding: 40px;
+            background: #0d0d0d;
+            box-shadow: 0 0 30px var(--neon-blue);
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--neon-blue);
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>CISSP SECURITY CROSSWORD</h1>
+    </header>
+
+    <div class="container">
+        <!-- CROSSWORD GRID -->
+        <div class="grid-wrapper">
+            <div id="board" class="crossword-board"></div>
+        </div>
+
+        <!-- CLUES -->
+        <div class="clues-panel">
+            <div class="clue-section">
+                <h3>ACROSS (横)</h3>
+                <div id="clues-across"></div>
+            </div>
+            <div class="clue-section">
+                <h3>DOWN (縦)</h3>
+                <div id="clues-down"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECRET -->
+    <div class="secret-box">
+        <div class="secret-title">SECRET LOCATION</div>
+        <div class="secret-grid" id="secret-display"></div>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div id="success-modal">
+        <div class="success-content">
+            <h1 style="font-size: 3rem; margin-bottom: 20px;">MISSION COMPLETE</h1>
+            <p style="font-size: 1.5rem;">TARGET: <span style="color: var(--secret-gold); font-weight: bold;">SHOE
+                    RACK</span> (靴箱)</p>
+            <p>Secrets secured.</p>
+            <button onclick="document.getElementById('success-modal').style.display='none'"
+                style="margin-top:20px; padding:10px 20px; background:transparent; border:1px solid white; color:white; cursor:pointer;">CLOSE</button>
+        </div>
+    </div>
+
+    <script>
+        // WORD DATA with Coordinates
+        // Grid: 14 rows, 16 cols
+        // SpecialIndex is relative to the word itself
+        const words = [
+            {
+                id: 1,
+                word: "CONFIDENTIALITY",
+                clue: "情報セキュリティの3要素(CIA)の一つ。許可された人だけが情報にアクセスできること。",
+                dir: "across",
+                start: { r: 1, c: 0 },
+                specialIndex: 0 // C
+            },
+            {
+                id: 2,
+                word: "NONREPUDIATION",
+                clue: "送信者が「送信した事実」を後から否定できないようにすること。デジタル署名などで実現。",
+                dir: "down",
+                start: { r: 0, c: 1 },
+                specialIndex: 1 // O
+            },
+            {
+                id: 3,
+                word: "KERBEROS",
+                clue: "分散ネットワーク環境でチケットを使用して認証を行うプロトコル。「番犬」の名を持つ。",
+                dir: "down",
+                start: { r: 0, c: 6 },
+                specialIndex: 1 // E
+            },
+            {
+                id: 4,
+                word: "RBAC",
+                clue: "Role-Based Access Controlの略。ユーザーの「役割」に基づいて権限を割り当てる方式。",
+                dir: "across",
+                start: { r: 3, c: 5 },
+                specialIndex: 0 // R
+            },
+            {
+                id: 5,
+                word: "TOKEN",
+                clue: "ワンタイムパスワード生成機や、API認証で使われる文字列など、「証票」を意味する言葉。",
+                dir: "down",
+                start: { r: 1, c: 13 },
+                specialIndex: 2 // K
+            },
+            {
+                id: 6,
+                word: "SALTS",
+                clue: "パスワードにランダムなデータを付加してハッシュ化し、レインボーテーブル攻撃などを防ぐ技術。",
+                dir: "across",
+                start: { r: 7, c: 6 },
+                specialIndex: 0 // S
+            },
+            {
+                id: 7,
+                word: "HASHING",
+                clue: "入力データを固定長の文字列に変換する一方向性関数。整合性の確認に使われる。",
+                dir: "down",
+                start: { r: 6, c: 7 },
+                specialIndex: 0 // H
+            },
+            {
+                id: 8,
+                word: "AVAILABILITY",
+                clue: "情報セキュリティの3要素(CIA)の一つ。システムが必要な時にいつでも使える状態にあること。",
+                dir: "across",
+                start: { r: 10, c: 4 },
+                specialIndex: 0 // A
+            }
+        ];
+
+        const SECRET_MAP = [
+            { char: 'S', wordId: 6, index: 0 }, // SALTS
+            { char: 'H', wordId: 7, index: 0 }, // HASHING
+            { char: 'O', wordId: 2, index: 1 }, // NON...
+            { char: 'E', wordId: 3, index: 1 }, // KERB...
+            { char: 'R', wordId: 4, index: 0 }, // RBAC
+            { char: 'A', wordId: 8, index: 0 }, // AVAIL..
+            { char: 'C', wordId: 1, index: 0 }, // CONF..
+            { char: 'K', wordId: 5, index: 2 }, // TOKEN
+        ];
+
+        const board = document.getElementById('board');
+        const gridState = Array(14).fill().map(() => Array(16).fill(null));
+
+        // Initialize Board State
+        words.forEach(w => {
+            for (let i = 0; i < w.word.length; i++) {
+                let r = w.start.r;
+                let c = w.start.c;
+                if (w.dir === 'across') c += i;
+                else r += i;
+
+                if (!gridState[r][c]) {
+                    gridState[r][c] = { char: w.word[i], words: [] };
+                }
+                gridState[r][c].words.push({ id: w.id, index: i });
+
+                // Mark Special
+                if (i === w.specialIndex) {
+                    gridState[r][c].special = true;
+                    w.specialCell = { r, c };
+                }
+            }
+        });
+
+        // Render Grid
+        for (let r = 0; r < 14; r++) {
+            for (let c = 0; c < 16; c++) {
+                const cellData = gridState[r][c];
+                const wrapper = document.createElement('div');
+                wrapper.className = 'wrapper-cell';
+
+                if (cellData) {
+                    const input = document.createElement('input');
+                    input.className = 'cell';
+                    input.maxLength = 1;
+                    input.dataset.r = r;
+                    input.dataset.c = c;
+
+                    if (cellData.special) input.classList.add('special');
+
+                    // Check if this is a start of any word
+                    const startingWord = words.find(w => w.start.r === r && w.start.c === c);
+                    if (startingWord) {
+                        const num = document.createElement('span');
+                        num.className = 'cell-number';
+                        num.innerText = startingWord.id;
+                        wrapper.appendChild(num);
+                    }
+
+                    input.addEventListener('input', (e) => handleInput(e.target));
+                    input.addEventListener('keydown', (e) => handleKey(e, r, c));
+                    input.addEventListener('focus', () => highlightClue(cellData.words));
+
+                    wrapper.appendChild(input);
+                } else {
+                    const empty = document.createElement('div');
+                    empty.className = 'empty-cell';
+                    wrapper.appendChild(empty);
+                }
+                board.appendChild(wrapper);
+            }
+        }
+
+        // Render Clues
+        const acrossContainer = document.getElementById('clues-across');
+        const downContainer = document.getElementById('clues-down');
+
+        words.forEach(w => {
+            const el = document.createElement('div');
+            el.className = 'clue-item';
+            el.id = `clue-${w.id}`;
+            el.innerHTML = `<span class="clue-num">${w.id}.</span> ${w.clue}`;
+
+            // Click to focus first cell
+            el.addEventListener('click', () => {
+                const cell = document.querySelector(`input[data-r="${w.start.r}"][data-c="${w.start.c}"]`);
+                if (cell) cell.focus();
+            });
+
+            if (w.dir === 'across') acrossContainer.appendChild(el);
+            else downContainer.appendChild(el);
+        });
+
+        // Init Secret Display
+        const secretDisplay = document.getElementById('secret-display');
+        SECRET_MAP.forEach((item, i) => {
+            const span = document.createElement('div');
+            span.className = 'secret-cell';
+            span.id = `secret-${i}`;
+            span.textContent = '?';
+            secretDisplay.appendChild(span);
+        });
+
+        // Logic
+        function handleInput(input) {
+            const r = parseInt(input.dataset.r);
+            const c = parseInt(input.dataset.c);
+            const val = input.value.toUpperCase();
+            input.value = val;
+
+            const cellData = gridState[r][c];
+
+            checkAll();
+            updateSecret(r, c, val);
+
+            // Auto-advance
+            if (val) {
+                // Determine direction based on last movement or default to the first word this cell belongs to
+                // Simple version: Try across then down
+                // If the user is typing a word, we want to follow THAT word.
+                // Current approach: simplistic next cell
+                // IMPROVEMENT: Naive Next (Across first)
+                let nextInput = document.querySelector(`input[data-r="${r}"][data-c="${c + 1}"]`);
+                if (!nextInput) nextInput = document.querySelector(`input[data-r="${r + 1}"][data-c="${c}"]`);
+
+                if (nextInput) nextInput.focus();
+            }
+        }
+
+        function handleKey(e, r, c) {
+            if (e.key === 'Backspace' && !e.target.value) {
+                // Move back
+                let prevInput = document.querySelector(`input[data-r="${r}"][data-c="${c - 1}"]`);
+                if (!prevInput) prevInput = document.querySelector(`input[data-r="${r - 1}"][data-c="${c}"]`);
+                if (prevInput) prevInput.focus();
+            }
+        }
+
+        function highlightClue(wordList) {
+            // Remove old highlights
+            document.querySelectorAll('.clue-item').forEach(el => el.style.background = 'transparent');
+
+            // Highlight current clues
+            wordList.forEach(wObj => {
+                const el = document.getElementById(`clue-${wObj.id}`);
+                if (el) el.style.background = 'rgba(255,255,255,0.2)';
+            });
+        }
+
+        function updateSecret(r, c, val) {
+            // Check if this cell is in the secret map
+            // We need to know which secret index this cell corresponds to
+            // Using the words check
+            const cellData = gridState[r][c];
+            if (!cellData.special) return;
+
+            // Find which secret letter relies on this cell
+            SECRET_MAP.forEach((s, idx) => {
+                const w = words.find(x => x.id === s.wordId);
+                // Check if (r,c) matches the special cell for this word
+                // Need to calculate special cell coords for word
+                let sr = w.start.r;
+                let sc = w.start.c;
+                if (w.dir === 'across') sc += s.index;
+                else sr += s.index;
+
+                if (sr === r && sc === c) {
+                    document.getElementById(`secret-${idx}`).textContent = val || '?';
+                }
+            });
+        }
+
+        function checkAll() {
+            let allCorrect = true;
+
+            // Check every cell against gridState
+            for (let r = 0; r < 14; r++) {
+                for (let c = 0; c < 16; c++) {
+                    if (gridState[r][c]) {
+                        const input = document.querySelector(`input[data-r="${r}"][data-c="${c}"]`);
+                        if (!input || input.value !== gridState[r][c].char) {
+                            allCorrect = false;
+                        }
+
+                        // Valid styling
+                        if (input && input.value === gridState[r][c].char) {
+                            input.classList.add('correct');
+                        } else if (input) {
+                            input.classList.remove('correct');
+                        }
+                    }
+                }
+            }
+
+            if (allCorrect) {
+                setTimeout(() => {
+                    // Force fill secret just in case
+                    SECRET_MAP.forEach((s, idx) => {
+                        document.getElementById(`secret-${idx}`).textContent = s.char;
+                    });
+                    document.getElementById('success-modal').style.display = 'flex';
+                    createConfetti();
+                }, 500);
+            }
+        }
+
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random() * 100 + 'vw';
+                c.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                c.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                document.body.appendChild(c);
+            }
+        }
+
+    </script>
+</body>
+
+</html>
